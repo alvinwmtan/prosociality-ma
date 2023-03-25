@@ -1,0 +1,250 @@
+---
+title: "prosociality_metaanalysis"
+format: html
+editor: visual
+bibliography: "references.bib"
+---
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(glue)
+library(googlesheets4)
+library(papaja)
+
+library(metalabr)
+library(metafor)
+library(meta)
+library(pwr)
+theme_set(theme_classic())
+walk(list.files("scripts", full.names = T), source)
+
+knitr::opts_chunk$set(
+  echo = F,
+  warning = F,
+  message = F
+)
+```
+
+```{r import}
+df_metadata <- get_metalab_metadata()
+df_ps_metadata <- df_metadata |> 
+  filter(short_name == "prosocial") |> 
+  mutate(key = "1j2Af5jyMjqRC6FBQnqGeTPVJ5nacDVf2cu9a9D3Se4o")
+
+specs <- metalabr:::get_metalab_specs()
+voe <- list(voe = list(fullname = "violation of expectation"))
+al <- list(antic_look = list(fullname = "anticipatory looking"))
+pl <- list(pref_look = list(fullname = "preferential looking"))
+specs[[11]]$options <- c(specs[[11]]$options,
+                         list(voe), list(al), list(pl))
+
+df_ps_d <- get_metalab_data(df_ps_metadata, specs = specs) |> 
+  select(-c(x_dif:rPVI_C)) # |> 
+  # mutate(year = str_sub(study_ID, str_length(study_ID)-3, str_length(study_ID)) |> 
+  #          as.numeric())
+
+df_orig <- metalabr:::fetch_metalab_data("1j2Af5jyMjqRC6FBQnqGeTPVJ5nacDVf2cu9a9D3Se4o") |> 
+  select(ppt_grp, date, stimuli:outcome_val, target, source) |> 
+  mutate(unique_row = seq_along(ppt_grp) |> as.character())
+df_ps <- df_ps_d |> 
+  left_join(df_orig, by = "unique_row") |> 
+  mutate(cite_print = ifelse(is.na(ppt_grp), short_cite, 
+                             glue("{short_cite} - {ppt_grp}")),
+         prop_excl = n_excluded_1 / n_1)
+```
+
+
+
+
+## Major author effect
+```{r}
+df_ps |> 
+  mutate(hamlin_lab = ifelse(Hamlin_Lab == 1, "Hamlin", "Other authors")) |> 
+  ggplot(aes(x = mean_age_months, y = d_calc, 
+             color = hamlin_lab, group = hamlin_lab)) +
+  geom_point() + 
+  geom_smooth(method = "lm") +
+  labs(x = "Mean age (months)",
+       y = expression(paste("Cohen's ", italic("d"))),
+       col = "Authors")
+```
+
+
+```{r}
+ma_hamlin <- rma.mv(d_calc ~ 1 + Hamlin_Lab, 
+                    V = d_var_calc, 
+                    random = ~ 1 | short_cite/unique_row, 
+                    data = df_opp)
+ma_hamlin
+```
+
+```{r}
+rma.mv(d_calc ~ 1 + Hamlin_Lab, 
+       V = d_var_calc, 
+       random = ~ 1 | short_cite/unique_row, 
+       data = df_ps |> 
+         filter(expt_condition %in% c("help_hinder", "give_take"),
+                short_cite != "Woo_et_al_2017"))
+```
+
+
+## Other moderators
+```{r}
+ma_age <- rma.mv(d_calc ~ mean_age_months, 
+                 V = d_var_calc, 
+                 random = ~ 1 | short_cite/unique_row, 
+                 data = df_opp)
+ma_age
+```
+
+```{r}
+ma_valence <- rma.mv(d_calc ~ intent_val * outcome_val, 
+                     V = d_var_calc, 
+                     random = ~ 1 | short_cite/unique_row, 
+                     data = df_ps)
+ma_valence
+```
+
+```{r}
+ma_condition <- rma.mv(d_calc ~ expt_condition, 
+                       V = d_var_calc, 
+                       random = ~ 1 | short_cite/unique_row, 
+                       data = df_opp)
+ma_condition
+```
+
+```{r}
+rma.mv(d_calc ~ method, 
+       V = d_var_calc, 
+       random = ~ 1 | short_cite/unique_row, 
+       data = df_opp)
+```
+
+```{r}
+rma.mv(d_calc ~ stimuli, 
+       V = d_var_calc, 
+       random = ~ 1 | short_cite/unique_row, 
+       data = df_opp)
+```
+
+```{r}
+rma.mv(d_calc ~ stimuli_type, 
+       V = d_var_calc, 
+       random = ~ 1 | short_cite/unique_row, 
+       data = df_opp)
+```
+
+```{r}
+rma.mv(d_calc ~ choice_object, 
+       V = d_var_calc, 
+       random = ~ 1 | short_cite/unique_row, 
+       data = df_opp)
+```
+
+```{r}
+rma.mv(d_calc ~ prop_excl, 
+       V = d_var_calc, 
+       random = ~ 1 | short_cite/unique_row, 
+       data = df_opp)
+```
+
+```{r}
+ma_cond <- rma.mv(d_calc ~ expt_condition, 
+                  V = d_var_calc, 
+                  random = ~ 1 | short_cite/unique_row, 
+                  data = df_opp)
+ma_cond_2 <- rma.mv(d_calc ~ expt_condition, 
+                    V = d_var_calc, 
+                    random = ~ 1 | unique_row, 
+                    data = df_opp)
+forest(ma_cond)
+
+df_opp_f <- df_opp |> arrange(desc(d_calc)) |> 
+  mutate(Condition = expt_condition |> 
+           fct_relevel("help_hinder", "fair_unfair",
+                       "give_take", "other") |> 
+           fct_recode("Helping/hindering" = "help_hinder",
+                      "Fair/unfair" = "fair_unfair",
+                      "Giving/taking" = "give_take",
+                      "Other" = "other"))
+
+ma_cond_m <- with(df_opp_f,
+                  metaprop(x_1, n_1, cite_print, random=T,
+                           subgroup = Condition))
+forest(ma_cond_m, fixed = F, ref = 0.5,
+       label.test.subgroup.random = ("Subgroup differences: "))
+```
+
+```{r}
+ma_cond_b <- with(df_opp_f,
+                  metabin(x_1, n_1, x_2, n_1, cite_print, random=T,
+                          metric = "OR", subgroup = Condition))
+forest(ma_cond_b, fixed = F, ref = 0.5,
+       label.test.subgroup.random = ("Subgroup differences: "))
+```
+
+
+## Power analysis
+```{r}
+pwr.p.test(h = ES.h(p1 = 0.62, p2 = 0.50),
+           sig.level = 0.05,
+           power = 0.80,
+           alternative = "greater") |> plot()
+```
+
+```{r}
+pwr.p.test(h = ES.h(p1 = 0.69, p2 = 0.50),
+           sig.level = 0.05,
+           power = 0.80,
+           alternative = "greater") |> plot()
+```
+
+## Cumulative meta-analysis
+```{r}
+ma_cum <- metacum(ma_cond_m, pooled = "random", 
+                  sortvar = df_opp |> arrange(desc(d_calc)) |> pull(date))
+```
+
+```{r}
+plot_cum <- ggplot(data = df_opp |> arrange(date) |> filter(!is.na(date)),
+                   mapping = aes(x = date, y = log(ma_cum$TE[1:80]))) + 
+  geom_ribbon(aes(ymin = log(ma_cum$lower[1:80]),
+                  ymax = log(ma_cum$upper[1:80])),
+              alpha = .1) +
+  geom_line() +
+  geom_point(aes(col = Hamlin_Lab)) + 
+  scale_colour_discrete(labels = c("Hamlin", "Other authors"),
+                        limits = c(TRUE, FALSE)) +
+  coord_cartesian(ylim = c(-0.5, 4)) +
+  labs(y = "Cumulative effect size (pseudologit)",
+       x = "Date",
+       col = "Major author") +
+  theme(legend.position = "bottom")
+
+plot_cum
+```
+
+```{r}
+ma_cum_b <- metacum(ma_cond_b, pooled = "random", 
+                    sortvar = df_opp |> arrange(desc(d_calc)) |> pull(date))
+```
+
+```{r}
+plot_cum_b <- ggplot(data = df_opp |> arrange(date) |> filter(!is.na(date)),
+                     mapping = aes(x = date, y = ma_cum_b$TE[1:80])) + 
+  geom_ribbon(aes(ymin = ma_cum_b$lower[1:80],
+                  ymax = ma_cum_b$upper[1:80]),
+              alpha = .1) +
+  geom_line() +
+  geom_point(aes(col = Hamlin_Lab)) + 
+  scale_colour_discrete(labels = c("Hamlin", "Other authors"),
+                        limits = c(TRUE, FALSE)) +
+  labs(y = "Cumulative effect size (log odds ratio)",
+       x = "Date",
+       col = "Major author") +
+  theme(legend.position = "bottom")
+
+plot_cum_b
+```
+
