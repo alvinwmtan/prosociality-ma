@@ -1,9 +1,23 @@
 ---
-title: "prosociality_metaanalysis"
-format: html
+title: "Prosocial evaluation: A new meta-analysis"
+author: Alvin W.M. Tan
+date: '`r format(Sys.time(), "%F")`'
+format: 
+  html:
+    toc: true
+    toc-depth: 4
+    theme: united
 editor: visual
 bibliography: "references.bib"
 ---
+
+```{r echo=F}
+knitr::opts_chunk$set(
+  echo = F,
+  warning = F,
+  message = F
+)
+```
 
 ```{r}
 library(tidyverse)
@@ -18,15 +32,9 @@ library(meta)
 library(pwr)
 theme_set(theme_classic())
 walk(list.files("scripts", full.names = T), source)
-
-knitr::opts_chunk$set(
-  echo = F,
-  warning = F,
-  message = F
-)
 ```
 
-```{r import}
+```{r import, results='hide'}
 df_metadata <- get_metalab_metadata()
 df_ps_metadata <- df_metadata |> 
   filter(short_name == "prosocial") |> 
@@ -54,197 +62,485 @@ df_ps <- df_ps_d |>
          prop_excl = n_excluded_1 / n_1)
 ```
 
+## Motivation
 
+For PSYCH 211 (Developmental Psychology) in Winter Quarter 2023, we were assigned to read the seminal paper by @hamlinSocialEvaluationPreverbal2007 on infants' evaluation of prosocial and antisocial agents, and to write a reading response.
+As I was looking up relevant research papers, I found a neat meta-analysis by @margoniInfantsEvaluationProsocial2018 on this exact topic, and then recalled that this was one of the datasets on MetaLab [@bergmannPromotingReplicabilityDevelopmental2018], so it was possible to access the underlying coded data, graciously provided by the authors.
+I also found a number of studies that had been published since 2017 (when the meta-analysis was conducted), and wanted to see how the field had progressed in its understanding of prosocial evaluation since then.
+As a result, I ended up retrieving the data using `metalabr` [@iversonMetalabrPackageAccessing2023], and appending new studies that had emerged since 2017, leading to a frantic one-day meta-analysis push that I incorporated into my reading response. 
+Eventually, I became curious about other related effects (e.g., what about neutral agents?) as well as a whole class of looking time studies, which the authors had initially excluded to reduce methodological heterogeneity.
+The last ~5 years have seen a number of studies measuring such effects, thereby ensuring that there were sufficient data to investigate them meaningfully.
+This write-up is a culmination of this process, intended as an approachable meta-analytic view of the domain (and which perhaps might be reshaped into a manuscript at a future date).
 
+Acknowledgements at this point must be given to Francesco Margoni and Laura Franchin, who very kindly shared additional details of their studies and provided access to some of the papers included.
+Thanks also to my fantastic advisor, Mike Frank, whose commitment to open and collaborative science made this possible (and who has immense patience for his grad students working on numerous unrelated side projects, haha).
+Finally, thanks to Ellen Markman and Carol Dweck for the lovely class we've had this quarter, and for bringing this interesting domain of study to my attention in the first place.
 
-## Major author effect
+## Background
+
+There are several excellent reviews of prosocial evaluation [e.g., @holvoetInfantsPreferenceProsocial2016; @lavoieMeasuringMoralityInfancy2022], so I will direct the interested reader to those for a more thorough treatment of this phenomenon.
+For now, it suffices to paint a broad picture of the phenomenon of prosocial evaluation.
+This phenomenon is based on the observation that social cognition relies strongly on rapid evaluation on whether another agent is "friend" or "foe", "good" or "bad", and so on.
+In order to study how early such a capacity emerges, developmental scientists have probed young infants' ability to distinguish between and show a preference for agents that are more prosocial (e.g., helpers, givers, fair distributors, sharers, defenders) than agents that are more antisocial (e.g., hinderers, takers, unfair distributors, hoarders, bystanders). 
+This is often measured using a manual task (e.g., choosing between the two agents, selective helping, offering a gift or reward), or a looking time task (e.g., violation of expectation regarding socially relevant events, preferential looking between the two agents, anticipatory looking for expectation of event completion).
+
+The domain of prosocial evaluation was arguably inaugurated by @hamlinSocialEvaluationPreverbal2007 (although see @kuhlmeierAttributionDispositionalStates2003), and has attracted a great amount of subsequent interest.
+Notably, a number of attempted replications [@salvadoriProbingStrengthInfants2015; @schlingloff15montholdInfantsPrefer2020] have failed to replicate the original findings.
+This has motivated a meta-analysis by @margoniInfantsEvaluationProsocial2018, the seed of the present project, as well as an ongoing large-scale multi-lab replication attempt [@luccaInfantsSocialEvaluation2021] that is due to complete data collection later this year. 
+For now, I use a meta-analytic approach to characterise and understand the evidence within this domain, which will hopefully be an informative summary of the phenomenon of prosocial evaluation.
+
+## Method
+
+### Search and inclusion
+
+I adopted the search criteria from @margoniInfantsEvaluationProsocial2018, specifically searching the PsycInfo database with the search terms: `infant*AND (moral* OR help* OR hinder* OR good* OR fair)`, but limiting the publication date range to 2017--2023.
+I also conducted an additional search with the same set of search terms _plus_ `looking time`, with the date range 2007--2017.
+Finally, I also conducted a forward search from @hamlinSocialEvaluationPreverbal2007 in Google Scholar to scoop up any missed items (especially unpublished grey literature), again searching through all records from 2017--2023 as well as records including `looking time` from 2007--2017.
+
+Because I was interested in other potential effects not captured by the original study, I expanded the inclusion criteria. 
+Here I list the original criteria, along with the expanded criteria used in the present project, using the SPIDER framework [@cookePICOSPIDERTool2012].
+
+1. Sample
+    - Original: Typically-developing infants aged 4--36 months
+    - New: Typically-developing infants aged 3--36 months (I expanded this to include a number of looking time studies with 3-month-olds)
+2. Phenomenon of interest
+    - Original and new: Evaluation of prosocial agents
+3. Design
+    - Original: Expression of preference between "morally good" and "morally bad" characters, with within-participants measures
+    - New: Expression of preference between "morally good" and "morally bad" characters, _or_ between either of those and "morally neutral/ambiguous" characters, with within- _or_ between-participants measures
+4. Evaluation
+    - Original: Manual task (manual choice, selective helping, gift offering)
+    - New: Manual task (as above) _or_ looking time task (violation of expectation, preferential looking, or anticipatory looking)
+5. Research type
+    - Original and new: Experimental studies
+
+The original meta-analysis included 26 papers with 62 effect sizes.
+The replication included an additional 18 papers with 47 effect sizes.
+The looking time extension included an additional 17 papers and an additional 65 effect sizes.
+The neutral and other effect extension included an additional 4 papers and an additional 38 effect sizes.
+In total, this meta-analysis included 65 papers and 213 effect sizes.
+Note that the extensions also included some new effect sizes from previously included papers (e.g., a new looking time effect size from a paper that had been previously coded for a manual effect size).
+
+### Coding
+
+I included all the coded variables from @margoniInfantsEvaluationProsocial2018:
+
+- Sample size
+- Sample mean age
+- Type of scenario (help/hinder, fair/unfair, give/take)
+- Modality of stimulus presentation (live show, movies)
+- Stimulus type (real, cartoon)
+- Choice object (puppets, shapes, experimenters, cartoon people, cartoon animals)
+- Dependent variable (reaching, offering help or reward, violation of expectation, preferential looking, anticipatory looking)
+- Lab of origin (Hamlin, other)
+
+I added a number of variables which could potentially affect effect sizes (these will be further explained below when they are actually tested for moderation):
+
+- Intent valence (measuring agents' intentions; positive/negative, positive/neutral, neutral/negative)
+- Outcome valence (measuring actual outcome; opposite [positive/negative], neutral [positive/neutral or neutral/negative], same [positive/positive, neutral/neutral, negative/negative], reversed [negative/positive])
+- In manual tasks, number of exclusions due to non-choice
+- In looking time tasks, look target (preference, event itself, third-party approach, third-party reward)
+
+### Analysis
+
+I first conducted a replication of the study by @margoniInfantsEvaluationProsocial2018, including only manual tasks with opposite intent valence (positive/negative).
+I then examined looking time studies, both by themselves and in conjunction with the manual tasks.
+Finally, I looked at both manual and looking time studies, and included studies with non-opposite intent valence (positive/neutral or neutral/negative).
+In all cases, I used the `metalabr` package [@iversonMetalabrPackageAccessing2023] to calculate effect sizes and the `metafor` package [@viechtbauerConductingMetaanalysesMetafor2010] to run mixed-effect meta-analyses.
+
+Effect sizes were log odds ratios for the manual tasks, and standardised mean differences for the looking time tasks.
+The random effects were sample group nested within papers (since some papers included multiple effect sizes from the same sample).
+
+## Results and discussion
+
+Instead of printing one forest plot per section, I'll only print the full forest plot at the end (after both extensions; i.e., when all effect sizes have been included).
+
+### Replication
+
 ```{r}
-df_ps |> 
-  mutate(hamlin_lab = ifelse(Hamlin_Lab == 1, "Hamlin", "Other authors")) |> 
-  ggplot(aes(x = mean_age_months, y = d_calc, 
-             color = hamlin_lab, group = hamlin_lab)) +
-  geom_point() + 
-  geom_smooth(method = "lm") +
-  labs(x = "Mean age (months)",
-       y = expression(paste("Cohen's ", italic("d"))),
-       col = "Authors")
+df_opp <- df_ps |> 
+  filter(intent_val == "opp")
+
+df_rep <- df_opp |> 
+  filter(response_mode == "behavior")
+
+df_rep <- df_rep |> 
+  mutate(expt_condition = expt_condition |> 
+           as_factor() |> 
+           `contrasts<-`(value = contr.sum(4) * 0.5))
 ```
 
-
 ```{r}
-ma_hamlin <- rma.mv(d_calc ~ 1 + Hamlin_Lab, 
-                    V = d_var_calc, 
-                    random = ~ 1 | short_cite/unique_row, 
-                    data = df_opp)
-ma_hamlin
-```
-
-```{r}
-rma.mv(d_calc ~ 1 + Hamlin_Lab, 
-       V = d_var_calc, 
-       random = ~ 1 | short_cite/unique_row, 
-       data = df_ps |> 
-         filter(expt_condition %in% c("help_hinder", "give_take"),
-                short_cite != "Woo_et_al_2017"))
-```
-
-
-## Other moderators
-```{r}
-ma_age <- rma.mv(d_calc ~ mean_age_months, 
+ma_rep <- rma.mv(d_calc ~ 1, 
                  V = d_var_calc, 
-                 random = ~ 1 | short_cite/unique_row, 
-                 data = df_opp)
-ma_age
+                 random = ~ 1 | short_cite/same_infant, 
+                 data = df_rep)
+est_rep <- ma_rep$beta[1]
 ```
 
-```{r}
-ma_valence <- rma.mv(d_calc ~ intent_val * outcome_val, 
+In the replication, we included only manual task studies with opposite intent valence (one agent was positive, and one was negative), as a way to provide comparability to the original meta-analysis.
+Model results suggested a significantly positive estimate of $\beta =$ `r est_rep |> apa_num()` (95% CI [`r ma_rep$ci.lb |> apa_num()`, `r ma_rep$ci.ub |> apa_num()`], $p$ `r ma_rep$pval |> apa_p()`), which is equivalent to a proportion of `r (exp(est_rep) / (1 + exp(est_rep))) |> apa_num()` (95% CI [`r (exp(ma_rep$ci.lb) / (1 + exp(ma_rep$ci.lb))) |> apa_num()`, `r (exp(ma_rep$ci.ub) / (1 + exp(ma_rep$ci.ub))) |> apa_num()`]) of infants choosing the prosocial agent over the antisocial agent.
+
+#### Lab and sample moderators
+
+```{r maj-author}
+ma_rep_hamlin <- rma.mv(d_calc ~ 1 + Hamlin_Lab, 
+                        V = d_var_calc, 
+                        random = ~ 1 | short_cite/same_infant, 
+                        data = df_rep)
+est_rep_hamlin <- ma_rep_hamlin$beta[2]
+```
+
+As in the original meta-analysis, we included lab of origin as a moderator, finding a tendency towards significance for the factor of whether or not the paper originated from the Hamlin lab, $\beta =$ `r est_rep_hamlin |> apa_num()`, $Q_M$(1) $=$ `r ma_rep_hamlin$QM |> apa_num()`, $p=$ `r ma_rep_hamlin$QMp |> apa_p()`.
+
+```{r age}
+ma_rep_age <- rma.mv(d_calc ~ 1 + mean_age_months, 
                      V = d_var_calc, 
-                     random = ~ 1 | short_cite/unique_row, 
-                     data = df_ps)
-ma_valence
+                     random = ~ 1 | short_cite/same_infant, 
+                     data = df_rep)
+est_rep_age <- ma_rep_age$beta[2]
+```
+
+There was also no effect of age, $Q_M$(1) $=$ `r ma_rep_age$QM |> apa_num()`, $p=$ `r ma_rep_age$QMp |> apa_p()`.
+
+```{r}
+ma_rep_excl <- rma.mv(d_calc ~ prop_excl, 
+                      V = d_var_calc, 
+                      random = ~ 1 | short_cite/same_infant, 
+                      data = df_rep)
+```
+
+When looking through the studies, I also noticed that there was some variability in the number of exclusions due to infants' "misperforming" during the choice task---either they chose neither object, or they chose both objects. 
+These were excluded due to uninterpretability, but one could conceivably consider a zero or both choice to be a legitimate choice; excluding these infants would possibly inflate the proportion of infants that chose the prosocial agent.
+Thus, I included this specific type of exclusion (zero or both choice) as a moderator, operationalised as the proportion of this exclusion to the full sample size. 
+Note that some of these exclusions were estimated (e.g., if overall exclusions were given without breaking down into per-condition exclusions), and a few papers which did not report exclusions were dropped.
+Regardless, proportion of excluded participants was not a significant predictor, $Q_M$(1) $=$ `r ma_rep_excl$QM |> apa_num()`, $p=$ `r ma_rep_excl$QMp |> apa_p()`. 
+
+#### Scenario and stimuli moderators
+
+```{r}
+ma_rep_condition <- rma.mv(d_calc ~ expt_condition, 
+                           V = d_var_calc, 
+                           random = ~ 1 | short_cite/same_infant, 
+                           data = df_rep)
+```
+
+There was an effect of scenario type, $Q_M$(3) $=$ `r ma_rep_condition$QM |> apa_num()`, $p=$ `r ma_rep_condition$QMp |> apa_p()`.
+In particular, the help/hinder scenario had smaller effect sizes than the give/take scenario, as found by the original meta-analysis.
+
+```{r}
+ma_rep_method <- rma.mv(d_calc ~ method, 
+                        V = d_var_calc, 
+                        random = ~ 1 | short_cite/same_infant, 
+                        data = df_rep)
+ma_rep_present <- rma.mv(d_calc ~ stimuli, 
+                         V = d_var_calc, 
+                         random = ~ 1 | short_cite/same_infant, 
+                         data = df_rep)
+ma_rep_stimuli <- rma.mv(d_calc ~ stimuli_type, 
+                         V = d_var_calc, 
+                         random = ~ 1 | short_cite/same_infant, 
+                         data = df_rep)
+ma_rep_choice <- rma.mv(d_calc ~ choice_object, 
+                        V = d_var_calc, 
+                        random = ~ 1 | short_cite/same_infant, 
+                        data = df_rep)
+```
+
+The dependent variable (reaching, helping), stimuli (real, cartoon), and choice object (shapes, puppets, people, experimenters) all did not significantly moderate the effect size, all $p$ > .15.
+However, in a deviation from the original meta-analysis, the presentation modality (movie, live show) _did_ significantly moderate the effect size, $Q_M$(1) $=$ `r ma_rep_present$QM |> apa_num()`, $p=$ `r ma_rep_present$QMp |> apa_p()`. 
+Specifically, having a live show elicited larger effects than using movies.
+
+####  Power analysis
+```{r}
+pwr.p.test(h = ES.h(p1 = (exp(est_rep) / (1 + exp(est_rep))), p2 = 0.50),
+           sig.level = 0.05,
+           power = 0.80,
+           alternative = "greater") |> plot()
+```
+
+A post-hoc power analysis suggested that a sample of 224 infants is required to reliably detect an effect size of the meta-analytic magnitude at 80% power. 
+This size is clearly much much larger than any sample in any of the included papers, and perhaps serves as a signal to exercise more caution when designing, conducting, and interpreting manual task studies.
+
+#### Interim discussion
+
+Broadly, the replication did replicate the effects found in the original meta-analysis. 
+I found a small but positive overall effect, which was moderated by scenario type.
+I also found that the Hamlin lab tended to produce larger effects than other labs, although this effect was only a tendency and not significant.
+Surprisingly, presentation modality did affect effect size; future studies on prosocial evaluation should consider using live shows to more reliably elicit the desired effect.
+
+### Looking time extension
+
+Looking time has become an ubiquitous measure for infant studies, since it requires relatively little motor or linguistic capabilities and can thus be used on younger infants.
+It can also potentially offer more fine-grained measurements, since responses are continuous rather than binary (in the manual case).
+Although there are some debates around looking time paradigms [e.g., @bergmannWhatLookingTime2019], they have been used extensively to study prosocial evaluation, motivating a meta-analysis of such studies.
+
+```{r}
+df_look <- df_opp |> 
+  filter(response_mode == "eye-tracking")
+
+df_look <- df_look |> 
+  mutate(expt_condition = expt_condition |> 
+           as_factor() |> 
+           `contrasts<-`(value = contr.sum(4) * 0.5),
+         method = method |> 
+           as_factor() |> 
+           fct_shift(1) |> 
+           `contrasts<-`(value = contr.sum(3) * 0.5))
 ```
 
 ```{r}
-ma_condition <- rma.mv(d_calc ~ expt_condition, 
-                       V = d_var_calc, 
-                       random = ~ 1 | short_cite/unique_row, 
-                       data = df_opp)
-ma_condition
-```
-
-```{r}
-rma.mv(d_calc ~ method, 
-       V = d_var_calc, 
-       random = ~ 1 | short_cite/unique_row, 
-       data = df_opp)
-```
-
-```{r}
-rma.mv(d_calc ~ stimuli, 
-       V = d_var_calc, 
-       random = ~ 1 | short_cite/unique_row, 
-       data = df_opp)
-```
-
-```{r}
-rma.mv(d_calc ~ stimuli_type, 
-       V = d_var_calc, 
-       random = ~ 1 | short_cite/unique_row, 
-       data = df_opp)
-```
-
-```{r}
-rma.mv(d_calc ~ choice_object, 
-       V = d_var_calc, 
-       random = ~ 1 | short_cite/unique_row, 
-       data = df_opp)
-```
-
-```{r}
-rma.mv(d_calc ~ prop_excl, 
-       V = d_var_calc, 
-       random = ~ 1 | short_cite/unique_row, 
-       data = df_opp)
-```
-
-```{r}
-ma_cond <- rma.mv(d_calc ~ expt_condition, 
+ma_look <- rma.mv(d_calc ~ 1, 
                   V = d_var_calc, 
-                  random = ~ 1 | short_cite/unique_row, 
-                  data = df_opp)
-ma_cond_2 <- rma.mv(d_calc ~ expt_condition, 
-                    V = d_var_calc, 
-                    random = ~ 1 | unique_row, 
-                    data = df_opp)
-forest(ma_cond)
+                  random = ~ 1 | short_cite/same_infant, 
+                  data = df_look)
+est_look <- ma_look$beta[1]
+```
 
-df_opp_f <- df_opp |> arrange(desc(d_calc)) |> 
-  mutate(Condition = expt_condition |> 
-           fct_relevel("help_hinder", "fair_unfair",
-                       "give_take", "other") |> 
-           fct_recode("Helping/hindering" = "help_hinder",
-                      "Fair/unfair" = "fair_unfair",
-                      "Giving/taking" = "give_take",
-                      "Other" = "other"))
+Indeed, a meta-analysis of looking time studies demonstrated a larger effect size of $\beta =$ `r est_look |> apa_num()` (95% CI [`r ma_look$ci.lb |> apa_num()`, `r ma_look$ci.ub |> apa_num()`], $p$ `r ma_look$pval |> apa_p()`), although the variance in effect sizes was larger, with significant heterogeneity, $Q(65)$ `r ma_look$QEp |> apa_p()`.
 
-ma_cond_m <- with(df_opp_f,
-                  metaprop(x_1, n_1, cite_print, random=T,
-                           subgroup = Condition))
-forest(ma_cond_m, fixed = F, ref = 0.5,
-       label.test.subgroup.random = ("Subgroup differences: "))
+#### Lab and sample moderators
+
+```{r}
+ma_look_hamlin <- rma.mv(d_calc ~ 1 + Hamlin_Lab, 
+                         V = d_var_calc, 
+                         random = ~ 1 | short_cite/same_infant, 
+                         data = df_look)
+est_look_hamlin <- ma_look_hamlin$beta[2]
+```
+
+With looking time, lab of origin emerged as a significant predictor, $\beta =$ `r est_look_hamlin |> apa_num()`, $Q_M$(1) $=$ `r ma_look_hamlin$QM |> apa_num()`, $p$ `r ma_look_hamlin$QMp |> apa_p()`.
+This was somewhat surprising to me, as I expected a small or merely trending effect, as in the manual tasks; it is difficult to explain why there is such a difference in results, other than that looking time may have exposed greater heterogeneity.
+
+```{r}
+ma_look_age <- rma.mv(d_calc ~ 1 + mean_age_months, 
+                      V = d_var_calc, 
+                      random = ~ 1 | short_cite/same_infant, 
+                      data = df_look)
+est_look_age <- ma_look_age$beta[2]
+```
+
+Nonetheless, age remained a non-significant predictor, $Q_M$(1) $=$ `r ma_look_age$QM |> apa_num()`, $p=$ `r ma_look_age$QMp |> apa_p()`.
+This was again surprising, as I had thought that the greater sensitivity of looking time measures may have revealed an effect. 
+Perhaps, as has been argued elsewhere [@margoniInfantsEvaluationProsocial2018 among others], there is truly no developmental change from 3 to 36 months, meaning that either infants have an innate preference towards prosocial agents (even when they themselves are not the target of the prosocial action), or that any development must have occurred in the first three months of life.
+It's probably quite difficult to probe this in infants any younger than three months of age using current methodologies, so we may need alternative strategies to examine prosocial evaluation in even younger infants.
+
+#### Scenario and stimuli moderators
+
+```{r}
+ma_look_condition <- rma.mv(d_calc ~ expt_condition, 
+                            V = d_var_calc, 
+                            random = ~ 1 | short_cite/same_infant, 
+                            data = df_look)
+```
+
+There was _no_ effect of scenario type, $Q_M$(3) $=$ `r ma_look_condition$QM |> apa_num()`, $p=$ `r ma_look_condition$QMp |> apa_p()`, in contrary to the manual tasks.
+My guess is that this is driven largely by the greater heterogeneity and uncertainty in looking time results.
+
+```{r}
+ma_look_method <- rma.mv(d_calc ~ method, 
+                         V = d_var_calc, 
+                         random = ~ 1 | short_cite/same_infant, 
+                         data = df_look)
+ma_look_present <- rma.mv(d_calc ~ stimuli, 
+                          V = d_var_calc, 
+                          random = ~ 1 | short_cite/same_infant, 
+                          data = df_look)
+ma_look_stimuli <- rma.mv(d_calc ~ stimuli_type, 
+                          V = d_var_calc, 
+                          random = ~ 1 | short_cite/same_infant, 
+                          data = df_look)
+ma_look_choice <- rma.mv(d_calc ~ choice_object, 
+                         V = d_var_calc, 
+                         random = ~ 1 | short_cite/same_infant, 
+                         data = df_look)
 ```
 
 ```{r}
-ma_cond_b <- with(df_opp_f,
-                  metabin(x_1, n_1, x_2, n_1, cite_print, random=T,
-                          metric = "OR", subgroup = Condition))
-forest(ma_cond_b, fixed = F, ref = 0.5,
-       label.test.subgroup.random = ("Subgroup differences: "))
+ma_look_method_noantic <- rma.mv(d_calc ~ method, 
+                                 V = d_var_calc, 
+                                 random = ~ 1 | short_cite/same_infant, 
+                                 data = df_look |> 
+                                   filter(method != "anticipatory looking"))
 ```
 
+Stimuli type and choice object again did not have any effect, $p$ > .15.
+Furthermore, presentation modality did not have an effect either, $Q_M$(1) $=$ `r ma_look_present$QM |> apa_num()`, $p=$ `r ma_look_present$QMp |> apa_p()`, although the direction of the estimate was the same as that of manual tasks.
+Instead, method of measurement _did_ have an effect, $Q_M$(2) $=$ `r ma_look_method$QM |> apa_num()`, $p=$ `r ma_look_method$QMp |> apa_p()`, with violation of expectation having a tendency towards larger effects than preferential looking.
+To investigate this further, I reran the meta-analysis, excluding studies using anticipatory looking (as only 3 effect sizes used this measure). 
+This resulted in a significant difference between violation of expectation and preferential looking, $\beta =$ `r  ma_look_method_noantic$beta[2] |> apa_num()`, $p=$ `r ma_look_method_noantic$QMp |> apa_p()`.
 
-## Power analysis
 ```{r}
-pwr.p.test(h = ES.h(p1 = 0.62, p2 = 0.50),
+ma_look_target <- rma.mv(d_calc ~ target, 
+                         V = d_var_calc, 
+                         random = ~ 1 | short_cite/same_infant, 
+                         data = df_look)
+```
+
+I also broke down violation of expectation into three target types:
+
+- The event itself (expectation for agents in general to be prosocial)
+- Third-party approach (expectation for third parties to approach prosocial agents)
+- Third-party reward (expectation for third parties to reward prosocial agents)
+
+This did not explain any more variance in effect sizes, $Q_M$(1) $=$ `r ma_look_target$QM |> apa_num()`.
+
+#### Power analysis
+
+```{r}
+pwr.t.test(d = ma_look$beta[1],
            sig.level = 0.05,
            power = 0.80,
-           alternative = "greater") |> plot()
+           alternative = "greater",
+           type = "paired") |> plot()
+```
+
+A post-hoc power analysis suggested that a sample of 23 infants is required to reliably detect an effect size of the meta-analytic magnitude at 80% power. 
+This is notably much smaller than that for manual tasks, due to the larger estimated effect size. 
+It seems reasonable, then, to suggest that prosocial evaluation research should consider using looking time studies as a slightly more sensitive mode of measurement.
+
+#### Combined meta-analysis
+
+```{r}
+ma_opp_response <- rma.mv(d_calc ~ response_mode, 
+                          V = d_var_calc, 
+                          random = ~ 1 | short_cite/same_infant, 
+                          data = df_opp)
+```
+
+Combining the manual and looking time tasks showed that response mode did not actually significantly moderate the effect size, $Q_M$(1) $=$ `r ma_opp_response$QM |> apa_num()`, $p=$ `r ma_opp_response$QMp |> apa_p()`.
+
+```{r}
+id_both <- df_rep |> 
+  left_join(df_look |> select(long_cite, same_infant, method),
+            by = c("long_cite", "same_infant")) |> 
+  filter(!is.na(method.y)) |> 
+  pull(same_infant)
+
+df_both <- df_opp |> 
+  filter(same_infant %in% id_both)
+
+ma_both_response <- rma.mv(d_calc ~ response_mode, 
+                           V = d_var_calc, 
+                           random = ~ 1 | short_cite/same_infant, 
+                           data = df_both)
+```
+
+#### Interim discussion
+
+Looking time studies supported young infants' ability to conduct prosocial evaluation, and did not significantly differ from manual tasks in their estimation of this effect size.
+These studies also showed some patterns in similar directions to manual task studies, including the fact that age was not a significant moderator, that the Hamlin lab produces larger effect sizes than other labs.
+However, they demonstrated a different set of relationships with moderators such as scenario type and method of measurement.
+As such, even if manual and looking time studies were truly measuring the same underlying construct, they seem to involve different intervening processes and linking hypotheses [see @caoSynthesisEarlyCognitivesubmitted].
+It would be interesting to examine only studies that included _both_ manual and looking time metrics on the same set of participants (noting that there are 13 pairs of effect sizes that fulfil this criterion), but that is an analysis for another day.
+
+### Neutral agent extension
+
+A number of studies of prosocial evaluation have examined not just prosocial and antisocial agents, but neutral agents (e.g., agents who neither perform a prosocial nor an antisocial action) or ambiguous agents (e.g., agents who act inconsistently); I classified both such categories as "neutral".
+Some studies also manipulated the observed outcome of attempted actions, such that socially valenced events sometimes led to neutral outcomes (e.g., if the event was not played to completion so the outcome is unknown) or even reversed outcomes (e.g., with failed attempts to help or hinder that inadvertently caused the opposite outcome). 
+This motivated an extension which looked at the effects of intent and outcome valence to determine whether and how they affect prosocial evaluations.
+
+```{r}
+df_ps <- df_ps |> 
+  mutate(intent_val = intent_val |> 
+           as_factor() |> 
+           fct_relevel("opp", after = Inf) |> 
+           `contrasts<-`(value = contr.sum(3) * 0.5),
+         outcome_val = outcome_val |> 
+           as_factor() |> 
+           fct_relevel("opp", after = Inf) |> 
+           `contrasts<-`(value = contr.sum(4) * 0.5))
+
+ma_full_int <- rma.mv(d_calc ~ intent_val, 
+                      V = d_var_calc, 
+                      random = ~ 1 | short_cite/same_infant, 
+                      data = df_ps)
+ma_full_out <- rma.mv(d_calc ~ outcome_val, 
+                      V = d_var_calc, 
+                      random = ~ 1 | short_cite/same_infant, 
+                      data = df_ps)
+ma_full_val <- rma.mv(d_calc ~ intent_val * outcome_val, 
+                      V = d_var_calc, 
+                      random = ~ 1 | short_cite/same_infant, 
+                      data = df_ps)
+```
+
+Nonetheless, neither intent nor outcome valence appeared to significantly moderate effect size (all $p$ > .35).
+This is not too surprising for outcome valence, which feels like it truly shouldn't affect one's evaluation of an agent's prosociality.
+But this is somewhat surprising for intent valence: it suggests that there is no difference between a prosocial--antisocial comparison and one with a neutral agent, which is intuitively surprising. 
+It also seems to run counter to the suggestion that infants have a negativity bias---that they perceive neutral and antisocial agents as being more dissimilar than positive and neutral agents [@chaeNegativityBiasInfants2018; @hamlinSocialEvaluationPreverbal2007].
+These results seem to instead suggest that prosocial evaluation can be modelled as an estimation of _relative_ degree of prosociality, which is then thresholded, such that a sufficient quantity of relative difference is enough to trigger differentiated responding.
+One way to probe this would be to run studies that have more than two alternatives (e.g., very prosocial, somewhat prosocial, and neutral agents) to determine whether infants consistently choose the most prosocial of the presented options, and further, whether there is a graded response towards the agents that is proportional to their prosociality.
+Of course, this would rely strongly on infants' working memory capabilities (as they would need to maintain yet another agent representation), so we may only see an effect emerge for older infants.
+In fact, it would be good to probe this in adults as well---we may observe non-linearities in the response function that could be interesting to explore.
+
+#### Cumulative meta-analysis
+
+```{r}
+df_cumul <- df_ps |> 
+  filter(!is.na(date)) |> 
+  arrange(date)
+
+ma_full_ <- rma.uni(d_calc ~ 1, 
+                    vi = d_var_calc, 
+                    data = df_cumul)
+ma_cumul <- cumul(ma_full_)
 ```
 
 ```{r}
-pwr.p.test(h = ES.h(p1 = 0.69, p2 = 0.50),
-           sig.level = 0.05,
-           power = 0.80,
-           alternative = "greater") |> plot()
-```
-
-## Cumulative meta-analysis
-```{r}
-ma_cum <- metacum(ma_cond_m, pooled = "random", 
-                  sortvar = df_opp |> arrange(desc(d_calc)) |> pull(date))
-```
-
-```{r}
-plot_cum <- ggplot(data = df_opp |> arrange(date) |> filter(!is.na(date)),
-                   mapping = aes(x = date, y = log(ma_cum$TE[1:80]))) + 
-  geom_ribbon(aes(ymin = log(ma_cum$lower[1:80]),
-                  ymax = log(ma_cum$upper[1:80])),
+ggplot(data = df_cumul,
+       mapping = aes(x = date, y = ma_cumul$estimate)) + 
+  geom_ribbon(aes(ymin = ma_cumul$ci.lb,
+                  ymax = ma_cumul$ci.ub),
               alpha = .1) +
   geom_line() +
   geom_point(aes(col = Hamlin_Lab)) + 
   scale_colour_discrete(labels = c("Hamlin", "Other authors"),
                         limits = c(TRUE, FALSE)) +
-  coord_cartesian(ylim = c(-0.5, 4)) +
-  labs(y = "Cumulative effect size (pseudologit)",
+  coord_cartesian(ylim = c(0, 2.3)) +
+  labs(y = "Cumulative effect size (Cohen's d)",
        x = "Date",
        col = "Major author") +
   theme(legend.position = "bottom")
-
-plot_cum
 ```
+
+A cumulative meta-analysis of all the results shows how effect size has decreased over time, although it seems to have stabilised around $d=$ 0.5 from 2018. 
+Note that estimates are based on a fixed effects model, as the cumulative meta-analysis does not take random effects.
+
+#### Forest plot
+
+Finally, the plot that you've doubtlessly been waiting for: the forest plot, made with `meta` [@balduzziHowPerformMetaanalysis2019].
 
 ```{r}
-ma_cum_b <- metacum(ma_cond_b, pooled = "random", 
-                    sortvar = df_opp |> arrange(desc(d_calc)) |> pull(date))
+#| fig.width: 10.5
+#| fig.height: 46
+#| out.width: '\\textwidth'
+
+# ma_full_response <- rma.mv(d_calc ~ response_mode, 
+#                            V = d_var_calc, 
+#                            random = ~ 1 | short_cite/same_infant, 
+#                            data = df_ps |> arrange(desc(d_calc)))
+
+ma_full_response <- metagen(TE = d_calc,
+                            seTE = d_var_calc,
+                            studlab = short_cite,
+                            data = df_ps,
+                            subgroup = response_mode,
+                            fixed = F,
+                            random = T,
+                            detail.tau = c("short_cite", "short_cite/same_infant"))
+
+forest(ma_full_response, 
+       sortvar = desc(df_ps$d_calc),
+       #test.overall.fixed = F,
+       leftlabs = c("Study", "d", "SE(d)"))
 ```
 
-```{r}
-plot_cum_b <- ggplot(data = df_opp |> arrange(date) |> filter(!is.na(date)),
-                     mapping = aes(x = date, y = ma_cum_b$TE[1:80])) + 
-  geom_ribbon(aes(ymin = ma_cum_b$lower[1:80],
-                  ymax = ma_cum_b$upper[1:80]),
-              alpha = .1) +
-  geom_line() +
-  geom_point(aes(col = Hamlin_Lab)) + 
-  scale_colour_discrete(labels = c("Hamlin", "Other authors"),
-                        limits = c(TRUE, FALSE)) +
-  labs(y = "Cumulative effect size (log odds ratio)",
-       x = "Date",
-       col = "Major author") +
-  theme(legend.position = "bottom")
+## Final thoughts
 
-plot_cum_b
-```
-
+This has been a really fun exercise in running a meta-analysis, perhaps made easier as I had fewer analytic and coding decisions to make (as many of them had been made for me by @margoniInfantsEvaluationProsocial2018).
+It took me about a week and change to perform the search, do the coding, and write up this report, which is rather speedy for a meta-analysis.
+Hopefully, this has been an informative look into the field of prosocial evaluation, as well as related methodological issues including behavioural versus looking time measures, the major author effect, and the effect of stimuli.
+Perhaps, too, it is a reaffirmation that meta-analyses can be an extremely useful tool to summarise evidence from a field and understand possible factors underlying observed variance.
+There are many other interesting things to study that this meta-analysis has prompted, but I have to admit that I'm not really a social development researcher, so I'll leave those questions for my excellent colleagues to answer.
+For now, I'm glad that I have had the chance to practice my meta-analytic skills, and I hope you've found this investigation interesting too.
