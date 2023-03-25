@@ -297,7 +297,7 @@ ma_look <- rma.mv(d_calc ~ 1,
 est_look <- ma_look$beta[1]
 ```
 
-Indeed, a meta-analysis of looking time studies demonstrated a larger effect size of $\beta =$ `r est_look |> apa_num()` (95% CI [`r ma_look$ci.lb |> apa_num()`, `r ma_look$ci.ub |> apa_num()`], $p$ `r ma_look$pval |> apa_p()`), although the variance in effect sizes was larger, with significant heterogeneity, $Q(65)$ `r ma_look$QEp |> apa_p()`.
+Indeed, a meta-analysis of looking time studies demonstrated a larger effect size of $\beta =$ `r est_look |> apa_num()` (95% CI [`r ma_look$ci.lb |> apa_num()`, `r ma_look$ci.ub |> apa_num()`], $p$ `r ma_look$pval |> apa_p()`), although the variance in effect sizes was larger, with significant heterogeneity, $Q$(65) `r ma_look$QEp |> apa_p()`.
 
 #### Lab and sample moderators
 
@@ -383,7 +383,7 @@ I also broke down violation of expectation into three target types:
 - Third-party approach (expectation for third parties to approach prosocial agents)
 - Third-party reward (expectation for third parties to reward prosocial agents)
 
-This did not explain any more variance in effect sizes, $Q_M$(1) $=$ `r ma_look_target$QM |> apa_num()`.
+This did not explain any more variance in effect sizes, $Q_M$(3) $=$ `r ma_look_target$QM |> apa_num()`.
 
 #### Power analysis
 
