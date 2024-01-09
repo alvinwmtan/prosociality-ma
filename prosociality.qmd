@@ -26,12 +26,19 @@ library(glue)
 library(googlesheets4)
 library(papaja)
 
+library(ggthemes)
+library(patchwork)
+
 library(metalabr)
 library(metafor)
 library(meta)
 library(pwr)
-theme_set(theme_classic())
+
 walk(list.files("scripts", full.names = T), source)
+
+theme_set(theme_classic())
+options(ggplot2.discrete.colour = \() scale_colour_tableau(palette = "Superfishel Stone"),
+        ggplot2.discrete.fill = \() scale_fill_tableau(palette = "Superfishel Stone"))
 ```
 
 ```{r import, results='hide'}
@@ -60,6 +67,33 @@ df_ps <- df_ps_d |>
   mutate(cite_print = ifelse(is.na(ppt_grp), short_cite, 
                              glue("{short_cite} - {ppt_grp}")),
          prop_excl = n_excluded_1 / n_1)
+```
+
+```{r}
+df_opp <- df_ps |> 
+  filter(intent_val == "opp")
+
+df_rep <- df_opp |> 
+  filter(response_mode == "behavior")
+
+df_rep <- df_rep |> 
+  mutate(expt_condition = expt_condition |> 
+           as_factor() |> 
+           `contrasts<-`(value = contr.sum(4) * 0.5))
+```
+
+```{r}
+df_look <- df_opp |> 
+  filter(response_mode == "eye-tracking")
+
+df_look <- df_look |> 
+  mutate(expt_condition = expt_condition |> 
+           as_factor() |> 
+           `contrasts<-`(value = contr.sum(4) * 0.5),
+         method = method |> 
+           as_factor() |> 
+           fct_shift(1) |> 
+           `contrasts<-`(value = contr.sum(3) * 0.5))
 ```
 
 ## Motivation
@@ -115,10 +149,10 @@ Here I list the original criteria, along with the expanded criteria used in the 
     - Original and new: Experimental studies
 
 The original meta-analysis included 26 papers with 62 effect sizes.
-The replication included an additional 18 papers with 47 effect sizes.
-The looking time extension included an additional 17 papers and an additional 65 effect sizes.
-The neutral and other effect extension included an additional 4 papers and an additional 38 effect sizes.
-In total, this meta-analysis included 65 papers and 213 effect sizes.
+The replication included an additional `r df_rep[63:nrow(df_rep),] |> pull(long_cite) |> unique() |> setdiff(df_rep[1:62,] |> pull(long_cite) |> unique()) |> length()` papers with `r nrow(df_rep) - 62` effect sizes.
+The looking time extension included an additional `r df_look |> pull(long_cite) |> unique() |> setdiff(df_rep |> pull(long_cite) |> unique()) |> length()` papers and an additional `r nrow(df_look)` effect sizes.
+The neutral and other effect extension included an additional `r df_ps |> pull(long_cite) |> unique() |> setdiff(df_opp |> pull(long_cite) |> unique()) |> length()` papers and an additional `r nrow(df_ps) - nrow(df_opp)` effect sizes.
+In total, this meta-analysis included `r df_ps |> pull(long_cite) |> unique() |> length()` papers and `r nrow(df_ps)` effect sizes.
 Note that the extensions also included some new effect sizes from previously included papers (e.g., a new looking time effect size from a paper that had been previously coded for a manual effect size).
 
 ### Coding
@@ -158,19 +192,6 @@ Instead of printing one forest plot per section, I'll only print the full forest
 ### Replication
 
 ```{r}
-df_opp <- df_ps |> 
-  filter(intent_val == "opp")
-
-df_rep <- df_opp |> 
-  filter(response_mode == "behavior")
-
-df_rep <- df_rep |> 
-  mutate(expt_condition = expt_condition |> 
-           as_factor() |> 
-           `contrasts<-`(value = contr.sum(4) * 0.5))
-```
-
-```{r}
 ma_rep <- rma.mv(d_calc ~ 1, 
                  V = d_var_calc, 
                  random = ~ 1 | short_cite/same_infant, 
@@ -191,6 +212,18 @@ ma_rep_hamlin <- rma.mv(d_calc ~ 1 + Hamlin_Lab,
 est_rep_hamlin <- ma_rep_hamlin$beta[2]
 ```
 
+```{r}
+ggplot(df_rep, 
+       aes(y = d_calc, x = Hamlin_Lab)) +
+  geom_violin(aes(fill = Hamlin_Lab),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(labels = c("Other", "Hamlin")) +
+  labs(x = "Lab of origin",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+```
+
 As in the original meta-analysis, we included lab of origin as a moderator, finding a tendency towards significance for the factor of whether or not the paper originated from the Hamlin lab, $\beta =$ `r est_rep_hamlin |> apa_num()`, $Q_M$(1) $=$ `r ma_rep_hamlin$QM |> apa_num()`, $p=$ `r ma_rep_hamlin$QMp |> apa_p()`.
 
 ```{r age}
@@ -201,6 +234,17 @@ ma_rep_age <- rma.mv(d_calc ~ 1 + mean_age_months,
 est_rep_age <- ma_rep_age$beta[2]
 ```
 
+```{r}
+ggplot(df_rep, 
+       aes(y = d_calc, x = mean_age_months)) +
+  geom_point() +
+  geom_smooth(col = "#6388B4",
+              method = "lm") +
+  labs(x = "Mean age (m)",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+```
+
 There was also no effect of age, $Q_M$(1) $=$ `r ma_rep_age$QM |> apa_num()`, $p=$ `r ma_rep_age$QMp |> apa_p()`.
 
 ```{r}
@@ -208,6 +252,17 @@ ma_rep_excl <- rma.mv(d_calc ~ prop_excl,
                       V = d_var_calc, 
                       random = ~ 1 | short_cite/same_infant, 
                       data = df_rep)
+```
+
+```{r}
+ggplot(df_rep, 
+       aes(y = d_calc, x = prop_excl)) +
+  geom_point() +
+  geom_smooth(col = "#6388B4",
+              method = "lm") +
+  labs(x = "Proportion of excluded infants",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
 ```
 
 When looking through the studies, I also noticed that there was some variability in the number of exclusions due to infants' "misperforming" during the choice task---either they chose neither object, or they chose both objects. 
@@ -223,6 +278,19 @@ ma_rep_condition <- rma.mv(d_calc ~ expt_condition,
                            V = d_var_calc, 
                            random = ~ 1 | short_cite/same_infant, 
                            data = df_rep)
+```
+
+```{r}
+ggplot(df_rep, 
+       aes(y = d_calc, x = expt_condition)) +
+  geom_violin(aes(fill = expt_condition),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("help_hinder", "fair_unfair", "give_take", "other"),
+                   labels = c("Help/hinder", "Fair/unfair", "Give/take", "Other")) +
+  labs(x = "Scenario type",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
 ```
 
 There was an effect of scenario type, $Q_M$(3) $=$ `r ma_rep_condition$QM |> apa_num()`, $p=$ `r ma_rep_condition$QMp |> apa_p()`.
@@ -245,6 +313,50 @@ ma_rep_choice <- rma.mv(d_calc ~ choice_object,
                         V = d_var_calc, 
                         random = ~ 1 | short_cite/same_infant, 
                         data = df_rep)
+```
+
+```{r}
+p_rep_method <- ggplot(df_rep, 
+       aes(y = d_calc, x = method)) +
+  geom_violin(aes(fill = method),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(labels = c("Helping", "Reaching")) +
+  labs(x = "Dependent variable",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+p_rep_stimuli <- ggplot(df_rep, 
+       aes(y = d_calc, x = stimuli_type)) +
+  geom_violin(aes(fill = stimuli_type),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(labels = c("Cartoon", "Real")) +
+  labs(x = "Stimuli",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+p_rep_choice <- ggplot(df_rep, 
+       aes(y = d_calc, x = choice_object)) +
+  geom_violin(aes(fill = choice_object),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("shapes", "puppets", "experimenters", "people"),
+                   labels = c("Shapes", "Puppets", "Experimenters", "Cartoon people")) +
+  labs(x = "Choice object",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+(p_rep_method + p_rep_stimuli) / p_rep_choice
+```
+
+```{r}
+ggplot(df_rep, 
+       aes(y = d_calc, x = stimuli)) +
+  geom_violin(aes(fill = stimuli),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(labels = c("Live show", "Movies")) +
+  labs(x = "Presentation modality",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
 ```
 
 The dependent variable (reaching, helping), stimuli (real, cartoon), and choice object (shapes, puppets, people, experimenters) all did not significantly moderate the effect size, all $p$ > .15.
@@ -276,20 +388,6 @@ It can also potentially offer more fine-grained measurements, since responses ar
 Although there are some debates around looking time paradigms [e.g., @bergmannWhatLookingTime2019], they have been used extensively to study prosocial evaluation, motivating a meta-analysis of such studies.
 
 ```{r}
-df_look <- df_opp |> 
-  filter(response_mode == "eye-tracking")
-
-df_look <- df_look |> 
-  mutate(expt_condition = expt_condition |> 
-           as_factor() |> 
-           `contrasts<-`(value = contr.sum(4) * 0.5),
-         method = method |> 
-           as_factor() |> 
-           fct_shift(1) |> 
-           `contrasts<-`(value = contr.sum(3) * 0.5))
-```
-
-```{r}
 ma_look <- rma.mv(d_calc ~ 1, 
                   V = d_var_calc, 
                   random = ~ 1 | short_cite/same_infant, 
@@ -309,8 +407,21 @@ ma_look_hamlin <- rma.mv(d_calc ~ 1 + Hamlin_Lab,
 est_look_hamlin <- ma_look_hamlin$beta[2]
 ```
 
-With looking time, lab of origin emerged as a significant predictor, $\beta =$ `r est_look_hamlin |> apa_num()`, $Q_M$(1) $=$ `r ma_look_hamlin$QM |> apa_num()`, $p$ `r ma_look_hamlin$QMp |> apa_p()`.
-This was somewhat surprising to me, as I expected a small or merely trending effect, as in the manual tasks; it is difficult to explain why there is such a difference in results, other than that looking time may have exposed greater heterogeneity.
+```{r}
+# ggplot(df_look, 
+#        aes(y = d_calc, x = Hamlin_Lab)) +
+#   geom_violin(aes(fill = Hamlin_Lab),
+#               width = .7) +
+#   geom_boxplot(width = .2) +
+#   scale_x_discrete(labels = c("Other", "Hamlin")) +
+#   labs(x = "Lab of origin",
+#        y = "Cohen's d") +
+#   theme(legend.position = "none")
+```
+
+<!-- With looking time, lab of origin emerged as a significant predictor, $\beta =$ `r est_look_hamlin |> apa_num()`, $Q_M$(1) $=$ `r ma_look_hamlin$QM |> apa_num()`, $p$ `r ma_look_hamlin$QMp |> apa_p()`. -->
+<!-- This was somewhat surprising to me, as I expected a small or merely trending effect, as in the manual tasks; it is difficult to explain why there is such a difference in results, other than that looking time may have exposed greater heterogeneity. -->
+The Hamlin lab only produced two codable looking time estimates, thus it was not possible to establish whether lab of origin was a significant predictor of effect sizes.
 
 ```{r}
 ma_look_age <- rma.mv(d_calc ~ 1 + mean_age_months, 
@@ -318,6 +429,17 @@ ma_look_age <- rma.mv(d_calc ~ 1 + mean_age_months,
                       random = ~ 1 | short_cite/same_infant, 
                       data = df_look)
 est_look_age <- ma_look_age$beta[2]
+```
+
+```{r}
+ggplot(df_look, 
+       aes(y = d_calc, x = mean_age_months)) +
+  geom_point() +
+  geom_smooth(col = "#6388B4",
+              method = "lm") +
+  labs(x = "Mean age (m)",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
 ```
 
 Nonetheless, age remained a non-significant predictor, $Q_M$(1) $=$ `r ma_look_age$QM |> apa_num()`, $p=$ `r ma_look_age$QMp |> apa_p()`.
@@ -332,6 +454,19 @@ ma_look_condition <- rma.mv(d_calc ~ expt_condition,
                             V = d_var_calc, 
                             random = ~ 1 | short_cite/same_infant, 
                             data = df_look)
+```
+
+```{r}
+ggplot(df_look, 
+       aes(y = d_calc, x = expt_condition)) +
+  geom_violin(aes(fill = expt_condition),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("help_hinder", "fair_unfair", "give_take", "other"),
+                   labels = c("Help/hinder", "Fair/unfair", "Give/take", "Other")) +
+  labs(x = "Scenario type",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
 ```
 
 There was _no_ effect of scenario type, $Q_M$(3) $=$ `r ma_look_condition$QM |> apa_num()`, $p=$ `r ma_look_condition$QMp |> apa_p()`, in contrary to the manual tasks.
@@ -364,17 +499,75 @@ ma_look_method_noantic <- rma.mv(d_calc ~ method,
                                    filter(method != "anticipatory looking"))
 ```
 
+```{r}
+p_look_stimuli <- ggplot(df_look, 
+       aes(y = d_calc, x = stimuli_type)) +
+  geom_violin(aes(fill = stimuli_type),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(labels = c("Cartoon", "Real")) +
+  labs(x = "Stimuli",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+p_look_present <- ggplot(df_look, 
+       aes(y = d_calc, x = stimuli)) +
+  geom_violin(aes(fill = stimuli),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(labels = c("Live show", "Movies")) +
+  labs(x = "Presentation modality",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+p_look_choice <- ggplot(df_look, 
+       aes(y = d_calc, x = choice_object)) +
+  geom_violin(aes(fill = choice_object),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("shapes", "puppets", "experimenters", "people", "animals"),
+                   labels = c("Shapes", "Puppets", "Experimenters", "Cartoon people", "Cartoon animals")) +
+  labs(x = "Choice object",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+(p_look_stimuli + p_look_present) / p_look_choice
+```
+
+```{r}
+ggplot(df_look, 
+       aes(y = d_calc, x = method)) +
+  geom_violin(aes(fill = method),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("violation of expectation", "preferential looking", "anticipatory looking"),
+                   labels = c("Violation of expectation", "Preferential looking", "Anticipatory looking")) +
+  labs(x = "Method of measurement",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+```
+
 Stimuli type and choice object again did not have any effect, $p$ > .15.
 Furthermore, presentation modality did not have an effect either, $Q_M$(1) $=$ `r ma_look_present$QM |> apa_num()`, $p=$ `r ma_look_present$QMp |> apa_p()`, although the direction of the estimate was the same as that of manual tasks.
 Instead, method of measurement _did_ have an effect, $Q_M$(2) $=$ `r ma_look_method$QM |> apa_num()`, $p=$ `r ma_look_method$QMp |> apa_p()`, with violation of expectation having a tendency towards larger effects than preferential looking.
 To investigate this further, I reran the meta-analysis, excluding studies using anticipatory looking (as only 3 effect sizes used this measure). 
-This resulted in a significant difference between violation of expectation and preferential looking, $\beta =$ `r  ma_look_method_noantic$beta[2] |> apa_num()`, $p=$ `r ma_look_method_noantic$QMp |> apa_p()`.
+This resulted in a significant difference between violation of expectation and preferential looking, $\beta =$ `r  ma_look_method_noantic$beta[2] |> abs() |> apa_num()`, $p=$ `r ma_look_method_noantic$QMp |> apa_p()`.
 
 ```{r}
 ma_look_target <- rma.mv(d_calc ~ target, 
                          V = d_var_calc, 
                          random = ~ 1 | short_cite/same_infant, 
                          data = df_look)
+```
+
+```{r}
+ggplot(df_look, 
+       aes(y = d_calc, x = target)) +
+  geom_violin(aes(fill = target),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("event itself", "3rd party approach", "3rd party reward", "preference"),
+                   labels = c("Event itself", "Third party approach", "Third party reward", "Preference")) +
+  labs(x = "Looking target",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
 ```
 
 I also broke down violation of expectation into three target types:
@@ -384,6 +577,35 @@ I also broke down violation of expectation into three target types:
 - Third-party reward (expectation for third parties to reward prosocial agents)
 
 This did not explain any more variance in effect sizes, $Q_M$(3) $=$ `r ma_look_target$QM |> apa_num()`.
+
+#### Participant design
+
+```{r}
+df_look_ppt <- df_look |> 
+  mutate(participant_design = fct_recode(participant_design,
+                                         within = "within_one",
+                                         within = "within_two"))
+
+ma_look_ppt <- rma.mv(d_calc ~ participant_design, 
+                      V = d_var_calc, 
+                      random = ~ 1 | short_cite/same_infant, 
+                      data = df_look_ppt)
+```
+
+```{r}
+ggplot(df_look_ppt, 
+       aes(y = d_calc, x = participant_design)) +
+  geom_violin(aes(fill = participant_design),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(labels = c("Between", "Within")) +
+  labs(x = "Participant design",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+```
+
+The looking time studies also differed according to their participant design, with four studies (accounting for 10 effect sizes) using between-participant designs and 24 studies (accounting for 56 effect sizes) using within-participant designs.
+There was a tendency towards within-participant designs having smaller effect sizes than between-participant designs, $\beta =$ `r ma_look_ppt$beta[2] |> apa_num()`, $Q_M$(1) $=$ `r ma_look_ppt$QM |> apa_num()`, $p=$ `r ma_look_ppt$QMp |> apa_p()`.
 
 #### Power analysis
 
@@ -408,6 +630,20 @@ ma_opp_response <- rma.mv(d_calc ~ response_mode,
                           data = df_opp)
 ```
 
+```{r}
+ggplot(df_opp, 
+       aes(y = d_calc, x = response_mode)) +
+  geom_violin(aes(fill = response_mode),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(breaks = c("behavior", "eye-tracking"),
+                   labels = c("Manual", "Looking time")) +
+  labs(x = "Response mode",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+```
+
+
 Combining the manual and looking time tasks showed that response mode did not actually significantly moderate the effect size, $Q_M$(1) $=$ `r ma_opp_response$QM |> apa_num()`, $p=$ `r ma_opp_response$QMp |> apa_p()`.
 
 ```{r}
@@ -429,7 +665,7 @@ ma_both_response <- rma.mv(d_calc ~ response_mode,
 #### Interim discussion
 
 Looking time studies supported young infants' ability to conduct prosocial evaluation, and did not significantly differ from manual tasks in their estimation of this effect size.
-These studies also showed some patterns in similar directions to manual task studies, including the fact that age was not a significant moderator, that the Hamlin lab produces larger effect sizes than other labs.
+These studies also showed some patterns in similar directions to manual task studies, including the fact that age was not a significant moderator.
 However, they demonstrated a different set of relationships with moderators such as scenario type and method of measurement.
 As such, even if manual and looking time studies were truly measuring the same underlying construct, they seem to involve different intervening processes and linking hypotheses [see @caoSynthesisEarlyCognitivesubmitted].
 It would be interesting to examine only studies that included _both_ manual and looking time metrics on the same set of participants (noting that there are 13 pairs of effect sizes that fulfil this criterion), but that is an analysis for another day.
@@ -465,6 +701,31 @@ ma_full_val <- rma.mv(d_calc ~ intent_val * outcome_val,
                       data = df_ps)
 ```
 
+```{r}
+ggplot(df_ps, 
+       aes(y = d_calc, x = intent_val)) +
+  geom_violin(aes(fill = intent_val),
+              width = .7) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("opp", "pos", "neg"),
+                   labels = c("+/-", "+/0", "0/-")) +
+  labs(x = "Intent valence",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+```
+
+```{r}
+ggplot(df_ps, 
+       aes(y = d_calc, x = outcome_val)) +
+  geom_violin(aes(fill = outcome_val)) +
+  geom_boxplot(width = .2) +
+  scale_x_discrete(limits = c("opp", "neut", "same", "rev"),
+                   labels = c("+/-", "+/0, 0/-", "+/+, 0/0, -/-", "-/+")) +
+  labs(x = "Outcome valence",
+       y = "Cohen's d") +
+  theme(legend.position = "none")
+```
+
 Nonetheless, neither intent nor outcome valence appeared to significantly moderate effect size (all $p$ > .35).
 This is not too surprising for outcome valence, which feels like it truly shouldn't affect one's evaluation of an agent's prosociality.
 But this is somewhat surprising for intent valence: it suggests that there is no difference between a prosocial--antisocial comparison and one with a neutral agent, which is intuitively surprising. 
@@ -495,12 +756,12 @@ ggplot(data = df_cumul,
               alpha = .1) +
   geom_line() +
   geom_point(aes(col = Hamlin_Lab)) + 
-  scale_colour_discrete(labels = c("Hamlin", "Other authors"),
-                        limits = c(TRUE, FALSE)) +
+  scale_colour_tableau(labels = c("Hamlin", "Other"),
+                       limits = c(TRUE, FALSE)) +
   coord_cartesian(ylim = c(0, 2.3)) +
   labs(y = "Cumulative effect size (Cohen's d)",
        x = "Date",
-       col = "Major author") +
+       col = "Lab of origin") +
   theme(legend.position = "bottom")
 ```
 
